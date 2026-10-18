@@ -1,0 +1,149 @@
+app-drone-map {
+  display: block;
+  position: relative;
+  height: 100%;
+  min-height: 420px;
+}
+
+app-drone-map .map {
+  position: absolute;
+  inset: 0;
+}
+
+app-drone-map .fit-all-control a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+app-drone-map .fit-all-control svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: #1e293b;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+app-drone-map .fit-all-control.hidden {
+  display: none;
+}
+
+app-drone-map .legend {
+  position: absolute;
+  right: 10px;
+  bottom: 24px;
+  z-index: 1000;
+  display: flex;
+  gap: 12px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 6px;
+  font-size: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+app-drone-map .legend span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+app-drone-map .swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #888;
+}
+
+app-drone-map .swatch.ring {
+  background: #fff;
+  box-shadow: 0 0 0 2px #f59e0b;
+}
+
+.drone-marker {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 2px;
+  border-radius: 50%;
+  background: #7a8594;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+}
+
+.drone-marker.status-active {
+  background: #2e9e4f;
+}
+
+/* White drone glyph (drone.svg used as a mask) inside every marker. */
+.drone-marker {
+  position: relative;
+}
+
+.drone-marker::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  background: #fff;
+  -webkit-mask: url('../../image/svg/drone.svg') center / contain no-repeat;
+  mask: url('../../image/svg/drone.svg') center / contain no-repeat;
+}
+
+.drone-marker.status-landed {
+  background: #7a8594;
+}
+
+.drone-marker.status-lost_signal {
+  background: #d62828;
+}
+
+.drone-marker.low-battery {
+  outline: 3px solid #f59e0b;
+}
+
+.drone-marker.lost {
+  animation: pulse 1.4s infinite;
+}
+
+.drone-marker.selected {
+  transform: scale(1.35);
+  box-shadow: 0 0 0 3px #1d4ed8;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(214, 40, 40, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(214, 40, 40, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(214, 40, 40, 0);
+  }
+}
+
+.drone-popup h4 {
+  margin: 0 0 6px;
+}
+
+.drone-popup dl {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 12px;
+  margin: 0;
+}
+
+.drone-popup dt {
+  color: #555;
+}
+
+.drone-popup dd {
+  margin: 0;
+  font-weight: 600;
+}

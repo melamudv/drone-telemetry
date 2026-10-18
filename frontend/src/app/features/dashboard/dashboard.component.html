@@ -1,0 +1,69 @@
+<header class="topbar">
+  <h1>Drone Dashboard</h1>
+  @if (stats(); as s) {
+    <div class="stats">
+      <span><strong>{{ s.total_drones }}</strong> drones</span>
+      <span class="warn"><strong>{{ s.low_battery_drones }}</strong> low battery</span>
+      <span class="danger"><strong>{{ s.by_status['lost_signal'] ?? 0 }}</strong> lost signal</span>
+    </div>
+  }
+</header>
+
+<main class="layout">
+  <aside class="sidebar">
+    <app-filters
+      [droneTypes]="droneTypes()"
+      [operators]="operators()"
+      [loading]="loading()"
+      (filtersChange)="onFilters($event)"
+    />
+    <hr />
+    <app-pipeline-panel
+      [runs]="runs()"
+      [running]="pipelineRunning()"
+      [error]="pipelineError()"
+      [runsError]="runsError()"
+      (run)="runPipeline()"
+    />
+  </aside>
+
+  <section class="map-area">
+    <div class="banners">
+      @if (loadError(); as message) {
+        <div class="banner error" role="alert">
+          ❌ {{ message }}
+          <button type="button" (click)="loadDrones()">Retry</button>
+        </div>
+      }
+      @if (selectedId(); as id) {
+        <div class="banner info">
+          Path of <strong>{{ id }}</strong>
+          @if (pathError(); as message) {
+            — {{ message }}
+          } @else if (path().length < 2) {
+            — no path history yet
+          } @else {
+            — {{ path().length }} points
+          }
+          <button type="button" (click)="clearSelection()">Clear</button>
+        </div>
+      }
+      @if (!loading() && !loadError() && drones().length === 0) {
+        <div class="banner empty">No drones match the selected filters.</div>
+      }
+      @if (truncated()) {
+        <div class="banner info">Showing {{ drones().length }} of {{ total() }} records.</div>
+      }
+    </div>
+    @if (loading()) {
+      <div class="loading" role="status"><span class="spinner"></span> Loading drones…</div>
+    }
+
+    <app-drone-map
+      [drones]="drones()"
+      [selectedId]="selectedId()"
+      [path]="path()"
+      (droneSelected)="onDroneSelected($event)"
+    />
+  </section>
+</main>

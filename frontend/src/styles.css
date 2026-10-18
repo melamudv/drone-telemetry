@@ -1,0 +1,21 @@
+html {
+  /* Material's theme expects Roboto; reuse the app's system font stack instead. */
+  --app-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mat-sys-body-large-font: var(--app-font);
+  --mat-sys-body-medium-font: var(--app-font);
+  --mat-sys-body-small-font: var(--app-font);
+  --mat-sys-label-large-font: var(--app-font);
+  --mat-sys-label-medium-font: var(--app-font);
+  --mat-sys-label-small-font: var(--app-font);
+  --mat-sys-title-large-font: var(--app-font);
+  --mat-sys-title-medium-font: var(--app-font);
+  --mat-sys-title-small-font: var(--app-font);
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  font-family: var(--app-font);
+  color: #1e293b;
+}
