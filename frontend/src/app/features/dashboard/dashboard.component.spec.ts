@@ -85,6 +85,18 @@ describe('DashboardComponent', () => {
     expect(c.loading()).toBeFalse();
   });
 
+  it('starts the first pipeline run automatically when there are no runs yet', () => {
+    pipelineService.getRuns.and.returnValue(of([]));
+    pipelineService.runAndWait.and.returnValue(of(completedRun));
+    create();
+    expect(pipelineService.runAndWait).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not auto-run when runs already exist', () => {
+    create();
+    expect(pipelineService.runAndWait).not.toHaveBeenCalled();
+  });
+
   it('shows an error and keeps the app usable when loading fails', () => {
     droneService.getDrones.and.returnValue(
       throwError(() => new HttpErrorResponse({ status: 0 })),

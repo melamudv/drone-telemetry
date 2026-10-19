@@ -96,15 +96,16 @@ def execute_run(
 ) -> None:
     """Run the full pipeline for an existing 'started' run; always records a final status.
 
-    `extra_source` optionally supplies more raw records (e.g. simulated live telemetry).
+    `extra_source` optionally supplies simulated live telemetry. The input file is then used
+    only for the initial load (while the source has nothing to offer, i.e. the DB is empty).
     """
     db = session_factory()
     try:
         run = db.get(PipelineRun, run_id)
         try:
-            records = load_records(input_file)
-            if extra_source:
-                records += extra_source(db)
+            fresh = extra_source(db) if extra_source else []
+            # The file is only the initial load: once the DB has data, the mock supplies the records.
+            records = fresh or load_records(input_file)
             process(db, records, run)
             run.status = COMPLETED
         except Exception as exc:  # any failure marks the whole run as failed

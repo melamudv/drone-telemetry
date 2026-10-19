@@ -59,7 +59,7 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadDrones();
-    this.loadRuns();
+    this.loadRuns(true);
     this.loadMeta();
   }
 
@@ -94,7 +94,8 @@ export class DashboardComponent implements OnInit {
     if (known.size !== this.operators().length) this.operators.set([...known].sort());
   }
 
-  loadRuns(): void {
+  /** `autoStart`: on first load with no runs at all, start the initial pipeline run automatically. */
+  loadRuns(autoStart = false): void {
     this.pipelineService
       .getRuns()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -102,6 +103,7 @@ export class DashboardComponent implements OnInit {
         next: (runs) => {
           this.runs.set(runs);
           this.runsError.set(null);
+          if (autoStart && !runs.length && !this.pipelineRunning()) this.runPipeline();
         },
         error: (err) => this.runsError.set(errorMessage(err)),
       });

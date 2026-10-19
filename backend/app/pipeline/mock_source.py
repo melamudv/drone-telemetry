@@ -78,9 +78,43 @@ def _ensure_all_statuses(batch: list[dict]) -> None:
         _set_status(donor, missing)
 
 
+MAX_DRONES = 20
+DEFAULT_TYPES = ("Quadcopter", "Fixed Wing", "Hexacopter", "VTOL")
+
+
+def _new_drones(latest: list[DroneRecord], now: datetime, rng: random.Random) -> list[dict]:
+    """1-2 drones that appear for the first time (capped so the map does not fill up forever)."""
+    room = MAX_DRONES - len(latest)
+    if room <= 0:
+        return []
+    numbers = [
+        int(rec.drone_id.rsplit("-", 1)[1]) for rec in latest if rec.drone_id.rsplit("-", 1)[-1].isdigit()
+    ]
+    next_number = max(numbers, default=0) + 1
+    types = sorted({rec.drone_type for rec in latest}) or list(DEFAULT_TYPES)
+    operators = sorted({rec.operator_id for rec in latest})
+    fresh = []
+    for offset in range(min(rng.randint(1, 2), room)):
+        fresh.append(
+            {
+                "drone_id": f"DRONE-{next_number + offset:03d}",
+                "drone_type": rng.choice(types),
+                "operator_id": rng.choice(operators),
+                "latitude": round(rng.uniform(31.0, 33.0), 4),
+                "longitude": round(rng.uniform(34.3, 35.5), 4),
+                "altitude_m": round(rng.uniform(50, 300), 1),
+                "speed_kmh": round(rng.uniform(20, 90), 1),
+                "battery_percent": round(rng.uniform(40, 100), 1),
+                "timestamp": now.isoformat() + "Z",
+                "status": "active",
+            }
+        )
+    return fresh
+
+
 def generate_batch(db: Session, now: datetime, rng: random.Random | None = None) -> list[dict]:
-    """One new reading per known drone, plus a duplicate and an invalid record so that
-    every counter of the run (valid / invalid / duplicate) is exercised."""
+    """One new reading per known drone, 1-2 brand-new drones, plus a duplicate and an invalid
+    record so that every counter of the run (valid / invalid / duplicate) is exercised."""
     rng = rng or random.Random()
     latest = _latest_per_drone(db)
     if not latest:
@@ -88,6 +122,7 @@ def generate_batch(db: Session, now: datetime, rng: random.Random | None = None)
 
     batch = [_next_reading(prev, now, rng) for prev in latest]
     _ensure_all_statuses(batch)
+    batch += _new_drones(latest, now, rng)
     batch.append(_as_raw(latest[0], latest[0].timestamp))
     batch.append({**batch[0], "battery_percent": 150, "status": "flying"})
     return batch

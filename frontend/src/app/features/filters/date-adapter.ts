@@ -3,7 +3,7 @@ import { NativeDateAdapter } from '@angular/material/core';
 
 /** Native adapter that also understands typed dd/MM/yyyy (and dd.MM.yyyy) dates. */
 @Injectable()
-export class IsraeliDateAdapter extends NativeDateAdapter {
+export class CustomDateAdapter extends NativeDateAdapter {
   override parse(value: unknown): Date | null {
     if (typeof value !== 'string' || !value.trim()) return null;
     const match = /^(\d{1,2})[/.](\d{1,2})[/.](\d{4})$/.exec(value.trim());

@@ -90,6 +90,20 @@ describe('FiltersComponent', () => {
     expect(emitted.length).toBe(0);
   });
 
+  it('disables Apply until something changes, and again after applying', () => {
+    expect(component.changed()).toBeFalse();
+    component.form.patchValue({ operator_id: 'OP-1' });
+    expect(component.changed()).toBeTrue();
+    component.apply();
+    expect(component.changed()).toBeFalse();
+    component.apply();
+    expect(emitted.length).toBe(1);
+    component.selectedStatuses.set(['landed']);
+    expect(component.changed()).toBeTrue();
+    component.selectedStatuses.set([]);
+    expect(component.changed()).toBeFalse();
+  });
+
   it('reset restores defaults and emits', () => {
     component.selectedTypes.set(['VTOL']);
     component.selectedStatuses.set(['landed']);

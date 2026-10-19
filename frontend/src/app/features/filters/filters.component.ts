@@ -13,7 +13,7 @@ import { MatTimepickerModule } from '@angular/material/timepicker';
 import { DRONE_STATUSES, DroneFilters } from '../../models/drone.model';
 import { ChipMultiselectComponent } from './chip-multiselect.component';
 import { israelToUtcIso, nowInIsrael } from '../../utils/format';
-import { IsraeliDateAdapter } from './date-adapter';
+import { CustomDateAdapter } from './date-adapter';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -43,7 +43,7 @@ function toBound(date: Date | null, end: boolean): string {
   ],
   providers: [
     { provide: MAT_DATE_LOCALE, useValue: 'en-GB' },
-    { provide: DateAdapter, useClass: IsraeliDateAdapter },
+    { provide: DateAdapter, useClass: CustomDateAdapter },
     { provide: MAT_DATE_FORMATS, useValue: MAT_NATIVE_DATE_FORMATS },
   ],
   template: `
@@ -146,7 +146,7 @@ function toBound(date: Date | null, end: boolean): string {
       </label>
 
       <div class="actions">
-        <button type="submit" [disabled]="form.invalid || loading()">Apply</button>
+        <button type="submit" [disabled]="form.invalid || loading() || !changed()">Apply</button>
         <button type="button" class="secondary" (click)="reset()" [disabled]="loading()">Reset</button>
       </div>
     </form>
@@ -214,10 +214,10 @@ export class FiltersComponent {
     return this.operators().filter((op) => op.toLowerCase().includes(query));
   });
 
-  apply(): void {
-    if (this.form.invalid) return;
+  /** Filters currently entered in the form. */
+  private currentFilters(): DroneFilters {
     const v = this.form.getRawValue();
-    this.filtersChange.emit({
+    return {
       drone_type: this.selectedTypes(),
       status: this.selectedStatuses(),
       operator_id: v.operator_id.trim(),
@@ -225,13 +225,30 @@ export class FiltersComponent {
       from: toBound(v.from, false),
       to: toBound(v.to, true),
       latest_only: v.latest_only,
-    });
+    };
+  }
+
+  private readonly formValue = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  private readonly applied = signal(JSON.stringify(this.currentFilters()));
+
+  /** True when the form differs from the last applied filters. */
+  readonly changed = computed(() => {
+    this.formValue();
+    return JSON.stringify(this.currentFilters()) !== this.applied();
+  });
+
+  apply(): void {
+    if (this.form.invalid || !this.changed()) return;
+    const filters = this.currentFilters();
+    this.applied.set(JSON.stringify(filters));
+    this.filtersChange.emit(filters);
   }
 
   reset(): void {
     this.form.reset();
     this.selectedTypes.set([]);
     this.selectedStatuses.set([]);
+    this.applied.set('');
     this.apply();
   }
 }
