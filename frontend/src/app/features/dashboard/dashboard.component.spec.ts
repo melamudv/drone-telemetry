@@ -56,7 +56,14 @@ describe('DashboardComponent', () => {
   }
 
   beforeEach(() => {
-    droneService = jasmine.createSpyObj('DroneService', ['getDrones', 'getPath', 'getDroneTypes', 'getStats']);
+    droneService = jasmine.createSpyObj('DroneService', [
+      'getDrones',
+      'getPath',
+      'getDroneTypes',
+      'getStats',
+      'addData',
+    ]);
+    droneService.addData.and.returnValue(of({ total: 10, added: 8, invalid: 0, duplicates: 2 }));
     pipelineService = jasmine.createSpyObj('PipelineService', ['getRuns', 'runAndWait']);
     droneService.getDrones.and.returnValue(of({ items: [drone()], total: 1, page: 1, page_size: 1000 }));
     droneService.getDroneTypes.and.returnValue(of(['Quadcopter']));
@@ -83,6 +90,18 @@ describe('DashboardComponent', () => {
     expect(c.runs().length).toBe(1);
     expect(c.droneTypes()).toEqual(['Quadcopter']);
     expect(c.loading()).toBeFalse();
+  });
+
+  it('addData posts the batch without refreshing the screen', () => {
+    const fixture = create();
+    droneService.getDrones.calls.reset();
+    droneService.getStats.calls.reset();
+    fixture.nativeElement.querySelector('.add-data').click();
+    fixture.detectChanges();
+    expect(droneService.addData).toHaveBeenCalled();
+    expect(droneService.getDrones).not.toHaveBeenCalled();
+    expect(droneService.getStats).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).not.toContain('Added 8');
   });
 
   it('starts the first pipeline run automatically when there are no runs yet', () => {
@@ -199,7 +218,18 @@ describe('DashboardComponent', () => {
 
     c.onDroneSelected(drone());
     expect(c.selectedId()).toBeNull();
-    expect(c.path()).toEqual([]);
+  });
+
+  it('reloads the open path when drones are refreshed', () => {
+    const later = [drone(), drone({ id: 2, latitude: 32.2, timestamp: '2026-06-28T11:00:00Z' })];
+    droneService.getPath.and.returnValue(of([drone()]));
+    const c = create().componentInstance;
+    c.onDroneSelected(drone());
+    droneService.getPath.and.returnValue(of(later));
+    droneService.getPath.calls.reset();
+    c.loadDrones();
+    expect(droneService.getPath).toHaveBeenCalledWith('DRONE-001');
+    expect(c.path()).toEqual(later);
   });
 });
 

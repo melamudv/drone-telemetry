@@ -50,6 +50,9 @@ export class DroneMapComponent implements AfterViewInit, OnDestroy {
   private pathLayer = L.layerGroup();
   private markers: { marker: L.Marker; drone: Drone }[] = [];
   private fitAllEl?: HTMLElement;
+  /** Automatic fit happens once. Later data refreshes keep the current zoom. */
+  private fitted = false;
+  private pathDroneId: string | null = null;
 
   constructor() {
     effect(() => this.renderMarkers(this.drones()));
@@ -125,7 +128,10 @@ export class DroneMapComponent implements AfterViewInit, OnDestroy {
       return { marker, drone };
     });
     this.fitAllEl?.classList.toggle('hidden', drones.length < 2);
-    if (drones.length) this.fitAll();
+    if (drones.length && !this.fitted) {
+      this.fitAll();
+      this.fitted = true;
+    }
     // untracked: selection changes must not re-render markers (that would close the open popup).
     untracked(() => this.highlight(this.selectedId()));
   }
@@ -133,8 +139,13 @@ export class DroneMapComponent implements AfterViewInit, OnDestroy {
   private renderPath(points: Drone[]): void {
     if (!this.map) return;
     this.pathLayer.clearLayers();
-    if (points.length < 2) return;
+    if (points.length < 2) {
+      this.pathDroneId = null;
+      return;
+    }
     const latLngs = points.map((p) => [p.latitude, p.longitude] as L.LatLngTuple);
+    const sameDrone = points[0].drone_id === this.pathDroneId;
+    this.pathDroneId = points[0].drone_id;
     L.polyline(latLngs, { color: '#1d4ed8', weight: 3, opacity: 0.8, dashArray: '6 6' }).addTo(
       this.pathLayer,
     );
@@ -149,7 +160,9 @@ export class DroneMapComponent implements AfterViewInit, OnDestroy {
         .bindTooltip(formatTimestamp(p.timestamp))
         .addTo(this.pathLayer);
     }
-    this.map.fitBounds(L.latLngBounds(latLngs), { padding: [60, 60], maxZoom: 14 });
+    if (!sameDrone) {
+      this.map.fitBounds(L.latLngBounds(latLngs), { padding: [60, 60], maxZoom: 14 });
+    }
   }
 
   private highlight(selected: string | null): void {

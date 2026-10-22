@@ -83,6 +83,7 @@ export class DashboardComponent implements OnInit {
           this.drones.set(page.items);
           this.total.set(page.total);
           this.rememberOperators(page.items);
+          if (this.selectedId()) this.loadPath(this.selectedId()!);
         },
         error: (err) => this.loadError.set(errorMessage(err)),
       });
@@ -149,6 +150,11 @@ export class DashboardComponent implements OnInit {
       });
   }
 
+  /** Sends a batch to the backend. The screen stays as it is until the next explicit reload. */
+  addData(): void {
+    this.droneService.addData().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+  }
+
   onDroneSelected(drone: Drone): void {
     if (this.selectedId() === drone.drone_id) {
       this.clearSelection();
@@ -157,12 +163,17 @@ export class DashboardComponent implements OnInit {
     this.selectedId.set(drone.drone_id);
     this.path.set([]);
     this.pathError.set(null);
+    this.loadPath(drone.drone_id);
+  }
+
+  /** Reloads the open path so new flight points are drawn without clearing the selection. */
+  private loadPath(droneId: string): void {
     this.droneService
-      .getPath(drone.drone_id)
+      .getPath(droneId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (points) => {
-          if (this.selectedId() === drone.drone_id) this.path.set(points);
+          if (this.selectedId() === droneId) this.path.set(points);
         },
         error: (err) => this.pathError.set(errorMessage(err)),
       });

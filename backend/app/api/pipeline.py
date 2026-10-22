@@ -6,7 +6,7 @@ from app import config
 from app import database
 from app.database import get_db
 from app.models import DroneRecord, PipelineRun
-from app.pipeline import mock_source, runner
+from app.pipeline import runner
 from app.schemas import PipelineRunOut, StatsOut
 
 router = APIRouter(prefix="/api", tags=["pipeline"])
@@ -23,9 +23,8 @@ def get_input_file():
 
 
 def get_extra_source():
-    if not config.MOCK_TELEMETRY:
-        return None
-    return lambda db: mock_source.generate_batch(db, runner.utcnow().replace(microsecond=0))
+    """Re-check rows already stored. An empty DB falls back to the input file."""
+    return runner.records_from_db
 
 
 @router.post("/pipeline/run", response_model=PipelineRunOut, status_code=202)

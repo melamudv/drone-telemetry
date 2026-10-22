@@ -28,6 +28,18 @@ class DroneRecord(Base):
     status: Mapped[str] = mapped_column(String(32), index=True)
 
 
+class RejectedRecord(Base):
+    """A row the pipeline checked and did not store: invalid or a duplicate."""
+
+    __tablename__ = "rejected_records"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    outcome: Mapped[str] = mapped_column(String(16), index=True)  # invalid | duplicate
+    drone_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    raw_json: Mapped[str] = mapped_column(Text)
+
+
 class PipelineRun(Base):
     __tablename__ = "pipeline_runs"
 

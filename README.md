@@ -55,7 +55,7 @@ cd frontend && npx ng test --watch=false --browsers=ChromeHeadless   # 27 tests
 
 `POST /api/pipeline/run` creates a `pipeline_runs` row (`status=started`) and returns `202` immediately. The work runs in a FastAPI background task (`app/pipeline/runner.py`):
 
-1. **Load** the JSON array from `INPUT_FILE`.
+1. **Load** records already stored in the DB (valid rows plus saved invalid and duplicate rows) and recount them. The JSON file is read only when the DB is empty. A later run does not insert.
 2. **Validate** each record with Pydantic (`app/pipeline/validation.py`): non-empty `drone_id`, latitude -90..90, longitude -180..180, altitude >= 0, battery 0..100, valid timestamp, status in `active | landed | lost_signal`.
 3. **Skip invalid** records (logged, counted in `invalid_records`).
 4. **Normalize**: trim strings, lower-case status, convert timestamps to UTC.
@@ -75,6 +75,7 @@ Invalid records do **not** fail a run; only an inability to process the input do
 | GET | `/api/drones/{drone_id}/path` | Full position history, oldest first |
 | GET | `/api/drone-types` | Distinct types (filter autocomplete) |
 | GET | `/api/stats` | Totals, status counts, low-battery count, last run |
+| POST | `/api/addData` | Adds 10 rows: 1 new drone, 7 points near existing ones, 2 duplicates. Validates before storing |
 
 `to=2026-06-28` (date only) includes the whole day. Timestamps are returned as UTC ISO strings ending in `Z`.
 

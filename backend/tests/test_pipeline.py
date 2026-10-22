@@ -16,11 +16,33 @@ def test_run_counts_valid_invalid_and_duplicates(loaded):
     assert run["error_message"] is None
 
 
+def test_rerun_rechecks_db_rows_and_inserts_nothing(session_factory, input_file):
+    from sqlalchemy import func, select
+
+    from app.models import DroneRecord, PipelineRun
+    from app.pipeline import runner
+
+    db = session_factory()
+    runner.execute_run(runner.start_run(db).id, session_factory, input_file)
+    before = db.scalar(select(func.count(DroneRecord.id)))
+    runner.execute_run(runner.start_run(db).id, session_factory, input_file, runner.records_from_db)
+    db.expire_all()
+    run = db.scalars(select(PipelineRun).order_by(PipelineRun.id.desc())).first()
+    assert run.status == "completed"
+    assert run.total_records == 13
+    assert run.valid_records == before
+    assert run.invalid_records == 3
+    assert run.duplicate_records == 1
+    assert db.scalar(select(func.count(DroneRecord.id))) == before
+    db.close()
+
+
 def test_rerun_is_idempotent(loaded):
     loaded.post("/api/pipeline/run")
     run = last_run(loaded)
-    assert run["valid_records"] == 0
-    assert run["duplicate_records"] == 10
+    assert run["valid_records"] == 9
+    assert run["invalid_records"] == 3
+    assert run["duplicate_records"] == 1
     assert loaded.get("/api/drones?page_size=1000").json()["total"] == 9
 
 

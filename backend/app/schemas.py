@@ -50,6 +50,13 @@ class PipelineRunOut(BaseModel):
     error_message: str | None
 
 
+class AddDataOut(BaseModel):
+    total: int
+    added: int
+    invalid: int
+    duplicates: int
+
+
 class StatsOut(BaseModel):
     total_records: int
     total_drones: int

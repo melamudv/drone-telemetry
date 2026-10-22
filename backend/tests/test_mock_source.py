@@ -1,7 +1,7 @@
 import random
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.models import DroneRecord
 from app.pipeline import mock_source, runner
@@ -12,21 +12,18 @@ def test_mock_batch_adds_new_readings_and_exercises_all_counters(session_factory
     run = runner.start_run(db)
     runner.execute_run(run.id, session_factory, input_file)
 
-    now = datetime(2026, 7, 1, 12, 0, 0)
-    source = lambda s: mock_source.generate_batch(s, now, random.Random(1))
+    before = db.scalar(select(func.count(DroneRecord.id)))
     run2 = runner.start_run(db)
-    runner.execute_run(run2.id, session_factory, input_file, source)
+    runner.execute_run(run2.id, session_factory, input_file)
 
     db.expire_all()
     r = db.get(type(run), run2.id)
     assert r.status == "completed"
-    assert r.valid_records in (6, 7)  # one reading per drone + 1-2 new drones
-    assert r.invalid_records == 1  # the mock's invalid record; the file is not read again
-    assert r.duplicate_records == 1  # the mock's duplicate
-    assert r.total_records == r.valid_records + 2
+    assert r.valid_records == before  # stored rows, not a new insert
+    assert r.invalid_records == 3
+    assert r.duplicate_records == 1
+    assert db.scalar(select(func.count(DroneRecord.id))) == before
     assert len(runner.load_records(input_file)) == 13  # the file is never modified
-    ids = {d.drone_id for d in db.scalars(select(DroneRecord))}
-    assert len(ids) == r.valid_records
     db.close()
 
 

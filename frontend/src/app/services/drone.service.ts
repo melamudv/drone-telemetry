@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { Drone, DroneFilters, DronePage, Stats } from '../models/drone.model';
+import { AddDataResult, Drone, DroneFilters, DronePage, Stats } from '../models/drone.model';
 import { cleanFilters } from '../utils/drone-utils';
 
 export const MAP_PAGE_SIZE = 1000;
@@ -16,6 +16,10 @@ export class DroneService {
       fromObject: { ...cleanFilters(filters), page_size: MAP_PAGE_SIZE },
     });
     return this.http.get<DronePage>('/api/drones', { params });
+  }
+
+  addData(): Observable<AddDataResult> {
+    return this.http.post<AddDataResult>('/api/addData', {});
   }
 
   getPath(droneId: string): Observable<Drone[]> {

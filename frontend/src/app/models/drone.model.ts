@@ -28,9 +28,17 @@ export interface DroneFilters {
   status?: string[];
   operator_id?: string;
   min_battery?: number | null;
+  max_battery?: number | null;
   from?: string;
   to?: string;
   latest_only?: boolean;
+}
+
+export interface AddDataResult {
+  total: number;
+  added: number;
+  invalid: number;
+  duplicates: number;
 }
 
 export interface Stats {

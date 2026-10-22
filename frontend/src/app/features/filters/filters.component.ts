@@ -95,6 +95,11 @@ function toBound(date: Date | null, end: boolean): string {
         <input type="range" min="0" max="100" step="5" formControlName="min_battery" />
       </label>
 
+      <label>
+        Max battery: <strong>{{ form.controls.max_battery.value }}%</strong>
+        <input type="range" min="0" max="100" step="5" formControlName="max_battery" />
+      </label>
+
       <div class="period">
         <div class="when">
           <mat-form-field appearance="outline" subscriptSizing="dynamic" class="date-field">
@@ -171,6 +176,7 @@ export class FiltersComponent {
     {
       operator_id: [''],
       min_battery: [0],
+      max_battery: [0],
       from: [null as Date | null],
       to: [null as Date | null],
       latest_only: [true],
@@ -222,6 +228,7 @@ export class FiltersComponent {
       status: this.selectedStatuses(),
       operator_id: v.operator_id.trim(),
       min_battery: v.min_battery > 0 ? v.min_battery : null,
+      max_battery: v.max_battery > 0 ? v.max_battery : null,
       from: toBound(v.from, false),
       to: toBound(v.to, true),
       latest_only: v.latest_only,

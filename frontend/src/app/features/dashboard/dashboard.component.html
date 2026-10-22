@@ -1,12 +1,15 @@
 <header class="topbar">
   <h1>Drone Dashboard</h1>
-  @if (stats(); as s) {
-    <div class="stats">
-      <span><strong>{{ s.total_drones }}</strong> drones</span>
-      <span class="warn"><strong>{{ s.low_battery_drones }}</strong> low battery</span>
-      <span class="danger"><strong>{{ s.by_status['lost_signal'] ?? 0 }}</strong> lost signal</span>
-    </div>
-  }
+  <div class="top-actions">
+    @if (stats(); as s) {
+      <div class="stats">
+        <span><strong>{{ s.total_drones }}</strong> drones</span>
+        <span class="warn"><strong>{{ s.low_battery_drones }}</strong> low battery</span>
+        <span class="danger"><strong>{{ s.by_status['lost_signal'] ?? 0 }}</strong> lost signal</span>
+      </div>
+    }
+    <button type="button" class="add-data" (click)="addData()">Add data</button>
+  </div>
 </header>
 
 <main class="layout">

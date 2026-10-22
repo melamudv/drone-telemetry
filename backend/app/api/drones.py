@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import DroneRecord
-from app.schemas import DroneOut, DronePage
+from app.pipeline import add_data
+from app.pipeline.runner import utcnow
+from app.schemas import AddDataOut, DroneOut, DronePage
 
 router = APIRouter(prefix="/api", tags=["drones"])
 
@@ -29,7 +31,7 @@ def parse_bound(value: str | None, name: str, end: bool = False) -> datetime | N
 
 
 def filtered_query(
-    drone_type, status, operator_id, min_battery, date_from, date_to, drone_id=None
+    drone_type, status, operator_id, min_battery, max_battery, date_from, date_to, drone_id=None
 ):
     q = select(DroneRecord)
     if drone_id:
@@ -42,6 +44,8 @@ def filtered_query(
         q = q.where(DroneRecord.operator_id == operator_id)
     if min_battery is not None:
         q = q.where(DroneRecord.battery_percent >= min_battery)
+    if max_battery is not None:
+        q = q.where(DroneRecord.battery_percent <= max_battery)
     if date_from:
         q = q.where(DroneRecord.timestamp >= date_from)
     if date_to:
@@ -55,6 +59,7 @@ def list_drones(
     status: list[str] | None = Query(None, description="Repeat to match several statuses"),
     operator_id: str | None = None,
     min_battery: float | None = Query(None, ge=0, le=100),
+    max_battery: float | None = Query(None, ge=0, le=100),
     date_from: str | None = Query(None, alias="from"),
     date_to: str | None = Query(None, alias="to"),
     latest_only: bool = False,
@@ -67,6 +72,7 @@ def list_drones(
         status,
         operator_id,
         min_battery,
+        max_battery,
         parse_bound(date_from, "from"),
         parse_bound(date_to, "to", end=True),
     )
@@ -104,6 +110,12 @@ def get_drone(record_id: int, db: Session = Depends(get_db)):
     if record is None:
         raise HTTPException(status_code=404, detail="Drone record not found")
     return record
+
+
+@router.post("/addData", response_model=AddDataOut)
+def add_data_batch(db: Session = Depends(get_db)):
+    """Add 10 telemetry rows: 1 new drone, nearby points, 2 duplicates. Invalid rows are skipped."""
+    return add_data.store_batch(db, add_data.build_batch(db, utcnow()))
 
 
 @router.get("/drones/{drone_id}/path", response_model=list[DroneOut])
